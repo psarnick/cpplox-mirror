@@ -1,0 +1,2 @@
+// [line 2] Error at '.': Expect expression.
+.123; // expect: [Parsing error] [line 2] error: bad syntax while parsing: Got TokenType::DOT with lexeme: '.'. Expected expression.

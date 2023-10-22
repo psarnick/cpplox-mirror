@@ -1,0 +1,9 @@
+target_sources(cpplox
+  PUBLIC
+    ByteCodeRunner.cpp
+    Chunk.cpp
+    Compiler.cpp
+    Debug.cpp
+    Value.cpp
+    VM.cpp
+)

@@ -1,0 +1,1 @@
+for (var a = 1; a < 2; {}) {} // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::LEFT_BRACE with lexeme: '{'. Expected expression.

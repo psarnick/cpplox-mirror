@@ -1,0 +1,3 @@
+var a = "a";
+var b = "b";
+a + b = "value"; // expect: [Parsing error] [line 3] error: bad syntax while parsing: Got TokenType::EQUAL with lexeme: '='. Invalid assignment target.

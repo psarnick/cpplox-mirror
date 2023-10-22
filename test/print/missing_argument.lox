@@ -1,0 +1,2 @@
+// [line 2] Error at ';': Expect expression.
+print; // expect: [Parsing error] [line 2] error: bad syntax while parsing: Got TokenType::SEMICOLON with lexeme: ';'. Expected expression.

@@ -1,0 +1,3 @@
+fun f(a, b) {}
+
+f(1); // expect: [Runtime error] [line 3] while interpreting: Expected: 2 arguments, but got: 1

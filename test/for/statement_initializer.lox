@@ -1,0 +1,1 @@
+for ({}; a < 2; a = a + 1) {} // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::LEFT_BRACE with lexeme: '{'. Expected expression.\n[line 1] error: bad syntax while parsing: Got TokenType::RIGHT_PAREN with lexeme: ')'. Expression statements must end with ';'

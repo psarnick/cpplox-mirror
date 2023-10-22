@@ -1,0 +1,1 @@
+return "wat"; // expect: [Resolving error] [line 1] while resolving: Can't return from top-level code.
