@@ -12,7 +12,8 @@ How to run one file:
 * `./src/cpplox ../test/for/syntax.lox` while in `build` directory
 * `cat ./compiler.log` to see bytecode and execution trace 
 
-Done: control flow (conditions and loops). Next: functions.
+Almost done: control flow (conditions and loops; a one test still fails).
+Next: functions.
 
 TODOs: 
 * Finish book
