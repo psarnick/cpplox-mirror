@@ -1,0 +1,4 @@
+{
+  var a = "value";
+  var a = "other"; // expect: [Parsing error] [line 3] error: bad syntax while parsing: Got TokenType::IDENTIFIER with lexeme: 'a'. Variable with this name already in scope.
+}

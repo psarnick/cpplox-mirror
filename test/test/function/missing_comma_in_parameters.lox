@@ -1,0 +1,1 @@
+fun foo(a, b c, d, e, f) {} // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::IDENTIFIER with lexeme: 'c'. Function parameter list must be followed by a ')'

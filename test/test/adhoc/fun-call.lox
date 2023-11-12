@@ -1,0 +1,13 @@
+fun fib(n) {
+  if (n < 2) return n;
+  //return fib(n - 1) + fib(n - 2);
+
+  print "PRINT BEGIN";
+  print fib(n-1);
+  print fib(n-1);
+
+  print "PRIN END";
+  return fib(n - 1) + fib(n - 2);
+}
+
+print fib(2); // expect: 21

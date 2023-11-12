@@ -1,0 +1,1 @@
+var false = "value"; // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::FALSE with lexeme: 'false'. Expected variable name after 'var'.

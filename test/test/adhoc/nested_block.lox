@@ -1,0 +1,11 @@
+var a = "outer";
+var x;
+{
+	{
+		fun f() {
+			print a;
+		}
+		x = f;
+	}
+}
+x();

@@ -1,0 +1,1 @@
+for (;;) var foo; // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::VAR with lexeme: 'var'. Expected expression.

@@ -1,0 +1,1 @@
+1 * "1"; // expect: [Runtime error] [line 1] while interpreting: Operands must be numbers.
