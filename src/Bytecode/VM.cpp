@@ -62,6 +62,22 @@ InterpretResult VM::run(const Chunk& chunk) {
     disassembler.disassemble_instruction(chunk, ip - 1);
 #endif
     switch (opcode) {
+      case OpCode::OP_JUMP_IF_FALSE: {
+        uint16_t offset = static_cast<uint16_t>(chunk.code[ip]) << 8 | static_cast<uint16_t>(chunk.code[ip+1]);
+        ip += 2;
+        if (is_falsey(stack.back())) ip += offset;
+        break;
+      }
+      case OpCode::OP_JUMP: {
+        uint16_t offset = static_cast<uint16_t>(chunk.code[ip]) << 8 | static_cast<uint16_t>(chunk.code[ip+1]);
+        ip += offset + 2;
+        break;
+      }
+      case OpCode::OP_LOOP: {
+        uint16_t offset = static_cast<uint16_t>(chunk.code[ip]) << 8 | static_cast<uint16_t>(chunk.code[ip+1]);
+        ip += -offset + 2;
+        break;
+      }
       case OpCode::OP_PRINT:
         output << value::to_string(stack.back()) << std::endl;
         stack.pop_back();
@@ -89,15 +105,20 @@ InterpretResult VM::run(const Chunk& chunk) {
         uint8_t idx = chunk.code[ip++];
         assert(idx < stack.size());
         stack.push_back(stack[idx]);
+        // VM is stack-based and other instructions can only take data from
+        // stack top. Register-based VM could fetch data directly by idx at the
+        // cost of larger instructions.
         break;
       }
       case OpCode::OP_SET_LOCAL: {
         uint8_t idx = chunk.code[ip++];
         assert(idx < stack.size());
         stack[idx] = stack.back();
+        // No .pop() as assignment is an expression and has to produce a value,
+        // which in its case is the assigned value itself.
         break;
       }
-      case ::OpCode::OP_GET_GLOBAL: {
+      case OpCode::OP_GET_GLOBAL: {
         const Value& maybe_global_var_name = chunk.constants[chunk.code[ip++]];
         if (!std::holds_alternative<std::string>(maybe_global_var_name)) {
           set_runtime_error(

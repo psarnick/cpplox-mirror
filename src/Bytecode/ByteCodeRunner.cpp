@@ -28,6 +28,9 @@ void ByteCodeRunner::runRepl() {
 void ByteCodeRunner::run(const std::string& source) {
   e_reporter.clear();
   log_output << " ByteCodeRunner state cleaned." << std::endl;
+  log_output << "=== source ===" << std::endl;
+  log_output << source << std::endl;
+  log_output << "==/ source /==" << std::endl;
 
   const std::vector<const Token>& tokens =
       clox::Scanner{source, e_reporter}.tokenize();

@@ -48,9 +48,15 @@ class VM {
   // Global variables are resolved dynamically (code referring to a global
   // variable before it's defined is valid, as long as this code is executed
   // after the corresponding definition - handy for recursive functions and
-  // repl), but this means that globals cannot be compiled statically. Local
-  // variables, on the other hand, are always declared before usage and can
-  // therefore be read directly from stack.
+  // repl), but this means that globals cannot/are hard to be compiled
+  // statically. Local variables, on the other hand, are always declared before
+  // usage, get created in declaration statements and because statements don't
+  // nest inside expressions there are never any temporary variables on the VM
+  // stack when statement begins executing. As such, local variables can live
+  // directly on stack if offsets from the top can be simulated at compile time
+  // (which Compiler does) Further details:
+  // https://craftinginterpreters.com/local-variables.html#representing-local-variables
+  // TODO: What would it mean to compile a global variable?
   std::vector<Value> stack;
   // Unbounded stack
   // Needless copies of Value are made on stack and globals, maybe better to

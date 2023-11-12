@@ -1,1 +1,0 @@
-var nil = "value"; // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::NIL with lexeme: 'nil'. Expected variable name after 'var'.

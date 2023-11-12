@@ -36,8 +36,14 @@ class Compiler {
 
   struct Local {
     std::string name{};
+    // TODO: Can this be a reference to string?
     int depth{0};
+    // Level of nesting this local lives in, 1 = first top-level block, 2 =
+    // inside of 1 and so on. Used to track which block each local variable
+    // belongs to.
     bool ready{false};
+    // Marks whether variable has been fully initialized and is ready for use.
+    // Done to correctly handle: { var a = "outer"; { var a = a; } }
   };
 
   typedef void (Compiler::*ParseFn)(const bool);
@@ -124,7 +130,7 @@ class Compiler {
        .infix = nullptr,
        .precedence = Precedence::NONE},
       /* AND */
-      {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
+      {.prefix = nullptr, .infix = &Compiler::and_, .precedence = Precedence::AND},
       /* CLASS */
       {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
       /* ELSE */
@@ -144,7 +150,7 @@ class Compiler {
        .infix = nullptr,
        .precedence = Precedence::NONE},
       /* OR */
-      {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
+      {.prefix = nullptr, .infix = &Compiler::or_, .precedence = Precedence::OR},
       /* PRINT */
       {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
       /* RETURN */
@@ -201,7 +207,11 @@ class Compiler {
   bool panic_mode{false};
   bool already_called{false};
   std::vector<Local> locals;
+  // All locals that are in scope during each point of compilation, ordered by
+  // order of declaration in code. Note: OP_GET_LOCAL and OP_SET_LOCAL use 1
+  // byte operands, so locals.size() can be 256 at most.
   int scope_depth{0};
+  // 0 = global scope, 1 = 1st to-level block, 2 = inside of 1st, ...
 
   void advance();
   void declaration();
@@ -216,6 +226,8 @@ class Compiler {
   void grouping(bool precedence_context_allows_assignment);
   void unary(const bool precedence_context_allows_assignment);
   void binary(const bool precedence_context_allows_assignment);
+  void and_(const bool precedence_context_allows_assignment);
+  void or_(const bool precedence_context_allows_assignment);
   // Compiled bytecode order is such that VM first executes LHS, then RHS and
   // finally the instruction.
   void literal(const bool precedence_context_allows_assignment);
@@ -228,13 +240,19 @@ class Compiler {
   void define_variable(const uint8_t const_table_index_of_global_variable_name);
   void begin_scope();
   void end_scope();
+  void if_statement();
+  void while_statement();
+  void for_statement();
   void named_variable(const std::string& var_name,
                       const bool precedence_context_allows_assignment);
   std::pair<uint8_t, bool> resolve_local(const std::string& name);
   uint8_t emit_identifier_constant(const Value& val) const;
+  uint16_t emit_jump(const OpCode op) const;
+  void emit_loop(size_t loop_start_instr_idx);
+  void patch_jump(uint16_t jump_instr_idx);
   void emit_operand(const uint8_t byte) const;
-  void emit_opcode(const OpCode byte) const;
-  void emit_opcodes(const OpCode first, const OpCode second) const;
+  void emit_opcode(const OpCode op) const;
+  void emit_opcodes(const OpCode op_one, const OpCode op_two) const;
   void emit_constant(const Value& val) const;
   void emit_return() const;
   void end_compiler() const;
@@ -242,6 +260,7 @@ class Compiler {
   void consume(const TokenType& ttype, const std::string& err_msg);
   void synchronize();
   void error_at_current(const std::string& err_msg);
-  void error_at(const size_t idx, const std::string& err_msg);
+  void error_at(const size_t idx, const std::string& err_msg,
+                const std::string& stage = "[Parsing error]");
   bool match(const TokenType& ttype);
 };

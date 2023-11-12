@@ -1,6 +1,0 @@
-var to_be_modified = "before";
-if (true) {
-	fun get_new_value() { return "after"; }
-	to_be_modified = get_new_value();
-}
-print to_be_modified;

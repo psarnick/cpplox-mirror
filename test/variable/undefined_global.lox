@@ -1,1 +1,1 @@
-print notDefined;  // expect runtime error: Undefined variable 'notDefined'.
+print notDefined;  // expect: [Runtime error] [line 1] while interpreting: Undefined variable 'notDefined'.

@@ -67,7 +67,7 @@ void Resolver::visitVariable(const VariableExpr& var) {
   if (var_not_ready) {
     e_reporter.set_error(
         "[line " + std::to_string(var.name->get_line()) +
-        "] while resolving: Can't read local variable in its own initializer");
+        "] while resolving: Can't read local variable in its own initializer.");
   }
   resolve_local_variable(var, *var.name);
 }

@@ -1,1 +1,0 @@
--"s"; // expect: [Runtime error] [line 1] while interpreting: Operand must be a number.

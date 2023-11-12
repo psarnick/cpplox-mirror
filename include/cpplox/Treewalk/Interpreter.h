@@ -100,6 +100,7 @@ class Environment {
   Environment(std::shared_ptr<Environment> enclosing_in)
       : enclosing(enclosing_in) {}
 
+  // TODO: Understand what it does, really
   explicit Environment() = default;
   ~Environment() = default;
   Environment(const Environment&) = default;

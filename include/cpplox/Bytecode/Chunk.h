@@ -9,17 +9,17 @@ namespace chunk {
 using namespace value;
 
 enum class OpCode : uint8_t {
-  OP_RETURN,    // [opcode]
-  OP_CONSTANT,  // [opcode, constant's index]
-  OP_NIL,       // [opcode]
-  OP_TRUE,      // [opcode]
-  OP_FALSE,     // [opcode]
-  OP_POP,       // [opcode]
-  OP_GET_LOCAL,
-  OP_SET_LOCAL,
-  OP_GET_GLOBAL,
-  OP_DEFINE_GLOBAL,  // [opcode, constant's index]
-  OP_SET_GLOBAL,     // [opcode, constant's index]
+  OP_RETURN,         // [opcode]
+  OP_CONSTANT,       // [opcode, constant's index]
+  OP_NIL,            // [opcode]
+  OP_TRUE,           // [opcode]
+  OP_FALSE,          // [opcode]
+  OP_POP,            // [opcode]
+  OP_GET_LOCAL,      // [opcode, local's stack index]
+  OP_SET_LOCAL,      // [opcode, local's stack index]
+  OP_GET_GLOBAL,     // [opcode, global's constant index]
+  OP_DEFINE_GLOBAL,  // [opcode, global's constant index]
+  OP_SET_GLOBAL,     // [opcode, global's constant index]
   OP_EQUAL,          // [opcode] and 2 values taken from stack
   OP_GREATER,        // [opcode] and 2 values taken from stack
   OP_LESS,           // [opcode] and 2 values taken from stack
@@ -29,7 +29,10 @@ enum class OpCode : uint8_t {
   OP_DIVIDE,         // [opcode] and 2 values taken from stack
   OP_NOT,            // [opcode] and 1 value  taken from stack
   OP_NEGATE,         // [opcode] and 1 value  taken from stack
-  OP_PRINT           // [opcode] and 1 value  taken from stack
+  OP_PRINT,          // [opcode] and 1 value  taken from stack
+  OP_JUMP_IF_FALSE,  // [opcode, offset's upper byte, offset's lower byte]
+  OP_JUMP,           // [opcode, offset's upper byte, offset's lower byte]
+  OP_LOOP            // [opcode, offset's upper byte, offset's lower byte]
 };
 
 class Chunk {

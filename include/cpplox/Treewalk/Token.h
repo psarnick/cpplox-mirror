@@ -73,6 +73,8 @@ class Token {
  private:
   const TokenType type;
   const std::string lexeme;
+  // TODO: Instead of making a copy, it could store a reference/span to the
+  // source code being compiled.
   const int line;
   const Literal literal;
 };
