@@ -2,12 +2,15 @@
 
 Based on http://craftinginterpreters.com
 
-How to run:
+How to build and test:
 * `mkdir build && cd build`
 * `cmake ..`
 * `cmake --build . -- -j 8`
 * `ctest -R VM`
-* `cat compiler.log` to see bytecode and execution trace
+
+How to run one file:
+* `./src/cpplox ../test/for/syntax.lox` while in `build` directory
+* `cat ./compiler.log` to see bytecode and execution trace 
 
 Done: control flow (conditions and loops). Next: functions.
 
