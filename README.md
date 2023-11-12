@@ -6,7 +6,7 @@ How to run:
 * `mkdir build && cd build`
 * `cmake ..`
 * `cmake --build . -- -j 8`
-* `ctest`
+* `ctest -R VM`
 * `cat compiler.log` to see bytecode and execution trace
 
 Done: control flow (conditions and loops). Next: functions.
