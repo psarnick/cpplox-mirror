@@ -7,13 +7,13 @@
 #include "cpplox/Treewalk/Scanner.h"
 // TOOD: Move scanner to common / scanner package
 
-std::unique_ptr<Chunk> Compiler::compile() {
-  if (already_called) {
+std::unique_ptr<value::Function> Compiler::compile() {
+  if (!healthy) {
     throw std::logic_error(
         "Compiler not designed to be called multiple times, create a new "
         "instance.");
   }
-  already_called = true;
+  healthy = false;
   current = 0;
   had_error = false;
   panic_mode = false;
@@ -24,7 +24,7 @@ std::unique_ptr<Chunk> Compiler::compile() {
     error_at(previous, "Expected end of file.");
   }
   end_compiler();
-  return std::move(chunk);
+  return had_error ? std::make_unique<Function>(0, "") : std::move(function);
 }
 
 void Compiler::advance() {
@@ -38,6 +38,8 @@ void Compiler::declaration() {
   // See: https://craftinginterpreters.com/global-variables.html#statements
   if (match(TokenType::VAR)) {
     var_declaration();
+  } else if (match(TokenType::FUN)) {
+    dispatch_function_declaration();
   } else {
     statement();
   }
@@ -56,11 +58,73 @@ void Compiler::var_declaration() {
   define_variable(maybe_const_table_index_of_global_variable_name);
 }
 
+void Compiler::dispatch_function_declaration() {
+  uint8_t maybe_const_table_index_of_global_variable_name =
+      parse_variable("Expected function name after 'fun'.");
+  if (scope_depth > 0) {
+    locals.back().depth = scope_depth;
+    locals.back().ready = true;
+  }
+  // Finalizign local var referring to function name as recursive
+  // functions refer to their name after declaration but before definition.
+  // This will not lead to using incomplete state as function declaration will
+  // be fully parsed before function can actually run.
+  // TODO: ^ is this even needed? Think if functions are always global in their
+  // own Compiler.
+
+  Compiler function_compiler{tokens, disassembler, e_reporter, current};
+  function_compiler.function_declaration();
+  function_compiler.end_compiler();
+  std::shared_ptr<Function> func = std::move(function_compiler.function);
+  // Instead of managing recursive state in a single Compiper object, create a
+  // a new compiler to process each function.
+  emit_constant(func);
+  // emit_constant invokes Chunk::add_constant(Value val). As add_constant
+  // makes a copy, refcount stays above 0 even after this block completes
+  // ensuring Function object pointed-to by func stays alive.
+  define_variable(maybe_const_table_index_of_global_variable_name);
+  current = function_compiler.current;
+  previous = function_compiler.previous;
+  had_error = function_compiler.had_error;
+  panic_mode = function_compiler.panic_mode;
+}
+
+void Compiler::function_declaration() {
+  begin_scope();
+  // Wrapping function declaration in a scope to avoid top-level function
+  // parameters from polluting global namespace and to shadow outer variables.
+  consume(TokenType::LEFT_PAREN, "Expected '(' after function name.");
+  if (!check(TokenType::RIGHT_PAREN)) {
+    do {
+      if (function->arity >= std::numeric_limits<uint8_t>::max()) {
+        error_at_current("Functions accept at most 255 parameters.");
+        return;
+      }
+      function->arity++;
+      uint8_t zero_as_function_args_are_local =
+          parse_variable("Expected variable name.");
+      assert(zero_as_function_args_are_local == 0);
+      define_variable(zero_as_function_args_are_local);
+    } while (match(TokenType::COMMA));
+  }
+  consume(TokenType::RIGHT_PAREN,
+          "Expected ')' after function parameter list.");
+  consume(TokenType::LEFT_BRACE, "Expected '{' as function body definition.");
+  block();
+  healthy = false;
+  // Invoking Compiler::end_scope would emit OP_POP for all local variables
+  // in current scope, including the return value from this function.
+  // Instead, the responsibility to clean up stack is offloaded to VM, which can
+  // hold on to the return value during the process. Skipping the call to
+  // Compiler::end_scope leaves the compiler in a bad state, so setting the
+  // flag.
+}
+
 void Compiler::statement() {
   // Separate rule for statements allowed inside control flow body.
   // See: https://craftinginterpreters.com/global-variables.html#statements
   if (match(TokenType::PRINT)) {
-    print_stmt();
+    print_statement();
   } else if (match(TokenType::LEFT_BRACE)) {
     begin_scope();
     block();
@@ -71,12 +135,14 @@ void Compiler::statement() {
     while_statement();
   } else if (match(TokenType::FOR)) {
     for_statement();
+  } else if (match(TokenType::RETURN)) {
+    return_statement();
   } else {
-    expression_stmt();
+    expression_statement();
   }
 }
 
-void Compiler::expression_stmt() {
+void Compiler::expression_statement() {
   // Expressions have a stack effect of +1 (they produce a value on the stack),
   // but statements leave stack unchanged. As such, expression statement
   // evaluates to the underlying expression and discards the result (OP_POP at
@@ -86,7 +152,7 @@ void Compiler::expression_stmt() {
   emit_opcode(OpCode::OP_POP);
 }
 
-void Compiler::print_stmt() {
+void Compiler::print_statement() {
   expression();
   consume(TokenType::SEMICOLON, "Expecting ; after print statement.");
   emit_opcode(OpCode::OP_PRINT);
@@ -134,7 +200,7 @@ void Compiler::unary(const bool precedence_context_allows_assignment) {
       emit_opcode(OpCode::OP_NEGATE);
       break;
     default:
-      throw std::logic_error("Unknown op in unary: " + token.to_string());
+      throw std::runtime_error("Unknown op in unary: " + token.to_string());
   }
 }
 
@@ -189,8 +255,10 @@ void Compiler::binary(const bool precedence_context_allows_assignment) {
 
 void Compiler::and_(const bool precedence_context_allows_assignment) {
   // When and_ is called LHS is evaluated and on the stack, if value is:
-  // falsey:  VM skips RHS and leaves LHS value as the result for the entire expression.
-  // !falsey: VM pops LHS value and evaluates RHS, which becomes the result.
+  // falsey:  VM skips RHS and leaves LHS value as the result for the entire
+  // expression.
+  // !falsey: VM pops LHS value and evaluates RHS, which becomes the
+  // result.
   uint16_t jump_over_rhs_instr_idx = emit_jump(OpCode::OP_JUMP_IF_FALSE);
   emit_opcode(OpCode::OP_POP);
   parse_precedence(Precedence::AND);
@@ -200,8 +268,9 @@ void Compiler::and_(const bool precedence_context_allows_assignment) {
 void Compiler::or_(const bool precedence_context_allows_assignment) {
   // When or_ is called LHS is evaluated and on the stack, if value is:
   // falsey:  VM pops LHS value and evaluates RHS, which becomes the result.
-  // !falsey: VM skips RHS and leaves LHS value as the result for the entire expression.
-  // Optimisation idea: add OP_JUMP_IF_TRUE as currently "or" is slower than "and".
+  // !falsey: VM skips RHS and leaves LHS value as the result for the entire
+  // expression. Optimisation idea: add OP_JUMP_IF_TRUE as currently "or" is
+  // slower than "and".
   uint16_t jump_to_rhs_instr_idx = emit_jump(OpCode::OP_JUMP_IF_FALSE);
   // Jumps over the jump_over_rhs jump. Parse that!
   uint16_t jump_over_rhs_instr_idx = emit_jump(OpCode::OP_JUMP);
@@ -226,6 +295,37 @@ void Compiler::literal(const bool precedence_context_allows_assignment) {
       break;
     default:
       throw std::runtime_error("unknown op: " + token.to_string());
+  }
+}
+
+void Compiler::call(const bool precedence_context_allows_assignment) {
+  int arg_count{0};
+  if (!check(TokenType::RIGHT_PAREN)) {
+    do {
+      if (arg_count >= std::numeric_limits<uint8_t>::max()) {
+        error_at_current("Cannot have more than 255 arguments.");
+        return;
+      }
+      arg_count++;
+      expression();
+      // Each argument is an expresssion and leaves one value on the stack.
+    } while (match(TokenType::COMMA));
+  }
+  consume(TokenType::RIGHT_PAREN, "Expected ')' at the end of function call.");
+  emit_opcode(OpCode::OP_CALL);
+  emit_operand(arg_count);
+}
+
+void Compiler::return_statement() {
+  if (function->name == "<script>") {
+    error_at(previous, "Cannot return from top-level code.");
+  }
+  if (match(TokenType::SEMICOLON)) {
+    emit_return(); // implicit return nil;
+  } else {
+    expression();
+    consume(TokenType::SEMICOLON, "Expected ';' after return value.");
+    emit_opcode(OpCode::OP_RETURN);
   }
 }
 
@@ -278,7 +378,7 @@ uint8_t Compiler::parse_variable(const std::string& err_msg) {
     // return its index
   } else {
     return 0;
-    // At runtime, locals aren’t looked up by name so there’s no need to store
+    // Locals are looked up by stack index so there’s no need to store
     // the variable’s name into the constant table. Return a dummy table index
     // instead, which is ignored in ::define_variable.
   }
@@ -323,7 +423,7 @@ void Compiler::define_variable(
     locals.back().depth = scope_depth;
     locals.back().ready = true;
     return;
-    // Local variable's initializer is compiled and it is ready for use.
+    // Local variable's initializer is compiled and local is ready for use.
     // Bytecode isn't needed to create a local var at runtime. The VM has just
     // executed the initializer and the local variable's value is on top of the
     // stack. Temporary slot becomes the local variable.
@@ -347,7 +447,7 @@ void Compiler::end_scope() {
   scope_depth--;
   int cnt = 0;
   for (auto it = locals.crbegin(); it != locals.crend(); it++) {
-    if (it->depth == scope_depth) {
+    if (it->depth <= scope_depth) {
       break;
     }
     emit_opcode(OpCode::OP_POP);
@@ -366,22 +466,25 @@ void Compiler::if_statement() {
   uint16_t jump_over_if_branch_instr_idx = emit_jump(OpCode::OP_JUMP_IF_FALSE);
   // Conditionally jump over the "if" branch.
   emit_opcode(OpCode::OP_POP);
-  // Evaluating the "if" condition leaves value on stack that has to be cleaned up. 
-  // This POP will be reached only if the condition is true (= no jump).
+  // Evaluating the "if" condition leaves value on stack that has to be cleaned
+  // up. This POP will be reached only if the condition is true (= no jump).
   statement();
   uint16_t jump_over_else_branch_instr_idx = emit_jump(OpCode::OP_JUMP);
   // Unconditionally jump over the the "else" branch.
   patch_jump(jump_over_if_branch_instr_idx);
   // "if" jump should land after last instruction in "if" branch.
   emit_opcode(OpCode::OP_POP);
-  // Just like the POP above, but reached only if the condition is false (= jump).
-  if (match(TokenType::ELSE)) { statement(); }
+  // Just like the POP above, but reached only if the condition is false (=
+  // jump).
+  if (match(TokenType::ELSE)) {
+    statement();
+  }
   patch_jump(jump_over_else_branch_instr_idx);
   // "else" jump should land after the optional else clause.
 }
 
 void Compiler::while_statement() {
-  size_t loop_start_instr_idx = chunk->code.size();
+  size_t loop_start_instr_idx = function->chunk->code.size();
   consume(TokenType::LEFT_PAREN, "Expected '(' after while");
   expression();
   consume(TokenType::RIGHT_PAREN, "Expected ')' after condition");
@@ -395,7 +498,7 @@ void Compiler::while_statement() {
 
 void Compiler::for_statement() {
   // TODO NOW: Fix for/scope.lox
-  
+
   begin_scope();
   consume(TokenType::LEFT_PAREN, "Expected '(' after for");
   if (match(TokenType::VAR)) {
@@ -403,34 +506,35 @@ void Compiler::for_statement() {
   } else if (match(TokenType::SEMICOLON)) {
     // Noop as initializer was not specified. Match moves to the next token.
   } else {
-    expression_stmt();
+    expression_statement();
   }
   // 1st ';' consumed above, no side-effect on stack.
-  size_t loop_start_instr_idx = chunk->code.size();
+  size_t loop_start_instr_idx = function->chunk->code.size();
   // Every loop iteration starts with evaluating the condition.
-  
-  uint16_t maybe_jump_over_loop_body_instr_idx {0};
-  bool had_condition  {false};
+
+  uint16_t maybe_jump_over_loop_body_instr_idx{0};
+  bool had_condition{false};
   if (!check(TokenType::SEMICOLON)) {
     expression();
     had_condition = true;
     maybe_jump_over_loop_body_instr_idx = emit_jump(OpCode::OP_JUMP_IF_FALSE);
-    emit_opcode(OpCode::OP_POP); // pop condition expression's value on "true" branch.
+    emit_opcode(
+        OpCode::OP_POP);  // pop condition expression's value on "true" branch.
   }
   consume(TokenType::SEMICOLON, "for loop condition must be followed by ';'");
-  
+
   if (!check(TokenType::RIGHT_PAREN)) {
     // Increment clause should be evaluated at the end of each loop iteration.
     // https://craftinginterpreters.com/jumping-back-and-forth.html#increment-clause
     // has a helpful diagram.
     uint16_t jump_over_incr_expr_instr_idx = emit_jump(OpCode::OP_JUMP);
-    uint16_t maybe_increment_expr_instr_idx = chunk->code.size();
+    uint16_t maybe_increment_expr_instr_idx = function->chunk->code.size();
     expression();
     emit_opcode(OpCode::OP_POP);
     emit_loop(loop_start_instr_idx);
     loop_start_instr_idx = maybe_increment_expr_instr_idx;
-    // After evaluating increment clause, resume from the for loop condition. 
-    patch_jump(jump_over_incr_expr_instr_idx);  
+    // After evaluating increment clause, resume from the for loop condition.
+    patch_jump(jump_over_incr_expr_instr_idx);
   }
   consume(TokenType::RIGHT_PAREN, "for loop clauses must be followed by ')");
   statement();
@@ -438,7 +542,8 @@ void Compiler::for_statement() {
 
   if (had_condition) {
     patch_jump(maybe_jump_over_loop_body_instr_idx);
-    emit_opcode(OpCode::OP_POP); // pop condition expression's value on "false" branch.
+    emit_opcode(
+        OpCode::OP_POP);  // pop condition expression's value on "false" branch.
   }
   end_scope();
 }
@@ -459,7 +564,7 @@ void Compiler::named_variable(const std::string& var_name,
     // they are read.
     // TODO_NOW: Challenge at
     // https://craftinginterpreters.com/global-variables.html#reading-variables
-    // Store global variable name in chunk's constants pool.
+    // Store global variable name in function chunk's constants pool.
     get_op = OpCode::OP_GET_GLOBAL;
     set_op = OpCode::OP_SET_GLOBAL;
   }
@@ -497,47 +602,48 @@ std::pair<uint8_t, bool> Compiler::resolve_local(const std::string& name) {
 }
 
 uint8_t Compiler::emit_identifier_constant(const Value& val) const {
-  return chunk->add_constant(val);
+  return function->chunk->add_constant(val);
 }
 
 uint16_t Compiler::emit_jump(const OpCode op) const {
   emit_opcode(op);
   emit_operand(0);
   emit_operand(0);
-  return chunk->code.size() - 3;
+  return function->chunk->code.size() - 3;
   // Return's jump instruction's address for later backpatching.
 }
 
 void Compiler::emit_loop(size_t loop_start_instr_idx) {
   emit_opcode(OpCode::OP_LOOP);
-  size_t jump_dist = chunk->code.size() + 2 - loop_start_instr_idx;
-  // Intent: jump such that execution is resumed at "while" condition evaluation.
+  size_t jump_dist = function->chunk->code.size() + 2 - loop_start_instr_idx;
+  // Intent: jump such that execution is resumed at "while" condition
+  // evaluation.
   if (jump_dist > std::numeric_limits<uint16_t>::max()) {
-    error_at_current("Too much code to jump over.");
+    error_at(previous, "Loop body too large, too much code to jump over.");
   }
-  chunk->code.push_back((jump_dist >> 8) & 0xff);
-  chunk->code.push_back(jump_dist & 0xff);
+  function->chunk->code.push_back((jump_dist >> 8) & 0xff);
+  function->chunk->code.push_back(jump_dist & 0xff);
 }
 
 void Compiler::patch_jump(uint16_t jump_instr_idx) {
-  size_t jump_dist = chunk->code.size() - 3 - jump_instr_idx;
-  // Intent: jump such that execution is resumed at code.size() (so 1 after last 
+  size_t jump_dist = function->chunk->code.size() - 3 - jump_instr_idx;
+  // Intent: jump such that execution is resumed at code.size() (so 1 after last
   // instruction). While interpreting this jump instruction, the VM will consume
-  // jump's 2 operands moving IP by 2 and then start processing the next instruction
-  // moving IP by 1 and jump distance has to be adjusted.
+  // jump's 2 operands moving IP by 2 and then start processing the next
+  // instruction moving IP by 1 and jump distance has to be adjusted.
   if (jump_dist > std::numeric_limits<uint16_t>::max()) {
     error_at_current("Too much code to jump over.");
   }
-  chunk->code[jump_instr_idx + 1] = (jump_dist >> 8) & 0xff;
-  chunk->code[jump_instr_idx + 2] = jump_dist & 0xff;
+  function->chunk->code[jump_instr_idx + 1] = (jump_dist >> 8) & 0xff;
+  function->chunk->code[jump_instr_idx + 2] = jump_dist & 0xff;
 }
 
 void Compiler::emit_operand(uint8_t byte) const {
-  chunk->add_byte(byte, tokens[previous].get_line());
+  function->chunk->add_byte(byte, tokens[previous].get_line());
 }
 
 void Compiler::emit_opcode(const OpCode op) const {
-  chunk->add_opcode(op, tokens[previous].get_line());
+  function->chunk->add_opcode(op, tokens[previous].get_line());
 }
 
 void Compiler::emit_opcodes(const OpCode op_one, const OpCode op_two) const {
@@ -547,18 +653,18 @@ void Compiler::emit_opcodes(const OpCode op_one, const OpCode op_two) const {
 
 void Compiler::emit_constant(const Value& val) const {
   emit_opcode(OpCode::OP_CONSTANT);
-  emit_operand(chunk->add_constant(val));
+  emit_operand(function->chunk->add_constant(val));
 }
 
-void Compiler::emit_return() const { emit_opcode(OpCode::OP_RETURN); }
+void Compiler::emit_return() const { emit_opcodes(OpCode::OP_NIL, OpCode::OP_RETURN); }
 
 void Compiler::end_compiler() const {
   emit_return();
 #ifdef DEBUG_PRINT_CODE
   if (!had_error) {
-    disassembler.disassemble_chunk(*chunk, "code");
+    disassembler.disassemble_chunk(*function->chunk, function->name);
   }
-#endif  // DEBUG_PRINT_CODE
+#endif
 }
 
 bool Compiler::check(const TokenType& ttype) const {

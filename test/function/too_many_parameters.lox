@@ -254,4 +254,4 @@ fun f(
     a252,
     a253,
     a254,
-    a255, a) {} // expect: [Parsing error] [line 257] error: bad syntax while parsing: Got TokenType::IDENTIFIER with lexeme: 'a'. Function cannot have more that 255 parameters
+    a255, a) {} // expect: [Parsing error] [line 257] error: bad syntax while parsing: Got TokenType::IDENTIFIER with lexeme: 'a'. Functions accept at most 255 parameters.

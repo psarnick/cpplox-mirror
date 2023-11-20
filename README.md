@@ -12,13 +12,15 @@ How to run one file:
 * `./src/cpplox ../test/for/syntax.lox` while in `build` directory
 * `cat ./compiler.log` to see bytecode and execution trace 
 
-Almost done: control flow (conditions and loops; one test still fails).
-Next: functions.
+Done: functions; Next: closures.
 
 TODOs: 
 * Finish book
 * Book's challenges
 * Benchmark Bytecode codebase - are Values passed around efficiently? OPP offers better structure std::variant?
+    * Define lifecycle interface
+        - Tokens in Scanner should make copies, not point to raw string (could be freed up after Scanning)
+        - Bytecode constants do/do not point to values stored in Tokens?
 * Refactor & document Treewalk codebase - OPP offers better structure than std::variant?
 * Register-based VM
 * Codegen optimisations

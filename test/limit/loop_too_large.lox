@@ -2348,4 +2348,4 @@ while (false) {
   nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil;
   nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil;
   nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil; nil;
-} // Error at '}': Loop body too large.
+} // expect: [Parsing error] [line 2351] error: bad syntax while parsing: Got TokenType::RIGHT_BRACE with lexeme: '}'. Loop body too large, too much code to jump over.

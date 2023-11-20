@@ -1,0 +1,17 @@
+fun global_1() { print "global_1"; }
+fun global_2() { print "global_2"; }
+
+global_1(); // expect: global_1
+global_1 = global_2;
+global_1(); // expect: global_2
+
+{
+    fun local_1() { print "local_1"; }
+    fun local_2() { print "local_2"; }
+
+    var tmp = local_1;
+    local_1(); // expect: local_1
+    local_1 = local_2;
+    local_1(); // expect: local_2
+    tmp(); // expect: local_1
+}

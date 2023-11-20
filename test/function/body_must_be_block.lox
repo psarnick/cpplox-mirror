@@ -1,1 +1,2 @@
-fun f() 123; // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::NUMBER with lexeme: '123'. Function body definition must start with '{'
+fun f() 123; // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::NUMBER with lexeme: '123'. Expected '{' as function body definition.
+// expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::EOF with lexeme: ''. Expecting } after block.

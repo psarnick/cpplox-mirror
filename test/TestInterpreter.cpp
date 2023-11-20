@@ -87,7 +87,6 @@ INSTANTIATE_TEST_SUITE_P(
       "benchmark/zoo.lox"
     )
 );
-*/
 
 INSTANTIATE_TEST_SUITE_P(
     ClosureTests, TestInterpreterFixture,
@@ -205,7 +204,6 @@ INSTANTIATE_TEST_SUITE_P(
                       "scanning/punctuators.lox", "scanning/whitespace.lox",
                       "scanning/identifiers.lox", "scanning/strings.lox"));
 
-/*
 INSTANTIATE_TEST_SUITE_P(
     FieldTests,
     TestInterpreterFixture,
@@ -233,7 +231,7 @@ INSTANTIATE_TEST_SUITE_P(
       "field/undefined.lox"
     )
 );
-*/
+
 
 INSTANTIATE_TEST_SUITE_P(PrintTests, TestInterpreterFixture,
                          ::testing::Values("print/missing_argument.lox"));
@@ -256,7 +254,7 @@ INSTANTIATE_TEST_SUITE_P(Logical_operatorTests, TestInterpreterFixture,
                                            "logical_operator/and_truth.lox",
                                            "logical_operator/or_truth.lox"));
 
-/*
+
 INSTANTIATE_TEST_SUITE_P(
     InheritanceTests,
     TestInterpreterFixture,
@@ -270,9 +268,7 @@ INSTANTIATE_TEST_SUITE_P(
       "inheritance/constructor.lox"
     )
 );
-*/
 
-/*
 INSTANTIATE_TEST_SUITE_P(
     SuperTests,
     TestInterpreterFixture,
@@ -299,7 +295,6 @@ INSTANTIATE_TEST_SUITE_P(
       "super/reassign_superclass.lox"
     )
 );
-*/
 
 INSTANTIATE_TEST_SUITE_P(AdhocTests, TestInterpreterFixture,
                          ::testing::Values("adhoc/scope.lox", "adhoc/fib.lox",
@@ -326,7 +321,6 @@ INSTANTIATE_TEST_SUITE_P(
                       "for/statement_condition.lox", "for/closure_in_body.lox",
                       "for/class_in_body.lox", "for/fun_in_body.lox"));
 
-/*
 INSTANTIATE_TEST_SUITE_P(
     ClassTests,
     TestInterpreterFixture,
@@ -340,8 +334,7 @@ INSTANTIATE_TEST_SUITE_P(
       "class/local_reference_self.lox"
     )
 );
-*/
-/*
+
 INSTANTIATE_TEST_SUITE_P(
     ThisTests,
     TestInterpreterFixture,
@@ -354,7 +347,8 @@ INSTANTIATE_TEST_SUITE_P(
       "this/nested_class.lox"
     )
 );
-*/
+
+
 INSTANTIATE_TEST_SUITE_P(StringTests, TestInterpreterFixture,
                          ::testing::Values("string/error_after_multiline.lox",
                                            "string/literals.lox",
@@ -372,7 +366,6 @@ INSTANTIATE_TEST_SUITE_P(
                       "while/closure_in_body.lox", "while/class_in_body.lox",
                       "while/fun_in_body.lox"));
 
-/*
 INSTANTIATE_TEST_SUITE_P(
     MethodTests,
     TestInterpreterFixture,
@@ -388,7 +381,7 @@ INSTANTIATE_TEST_SUITE_P(
       "method/extra_arguments.lox"
     )
 );
-*/
+
 
 INSTANTIATE_TEST_SUITE_P(
     OperatorTests, TestInterpreterFixture,
@@ -413,7 +406,6 @@ INSTANTIATE_TEST_SUITE_P(
         "operator/greater_or_equal_num_nonnum.lox",
         "operator/less_num_nonnum.lox"));
 
-/*
 INSTANTIATE_TEST_SUITE_P(
     ConstructorTests,
     TestInterpreterFixture,

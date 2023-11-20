@@ -257,5 +257,5 @@ fun foo() {}
      a, // 253
      a, // 254
      a, // 255
-     a); // expect: [Runtime error] [line 260] while interpreting: Expected: 0 arguments, but got: 256
+     a); // expect: [Parsing error] [line 260] error: bad syntax while parsing: Got TokenType::IDENTIFIER with lexeme: 'a'. Cannot have more than 255 arguments.
 }

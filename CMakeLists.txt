@@ -8,7 +8,7 @@ project(cpplox
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options(-Wpedantic -Wall -Werror)
+add_compile_options(-Wpedantic -Wall -Werror -O3)
 
 include(CTest)
 

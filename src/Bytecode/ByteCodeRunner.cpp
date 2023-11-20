@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "cpplox/Bytecode/Value.h"
+
 namespace clox {
 void ByteCodeRunner::runFile(const std::string& path) {
   std::ifstream ifs(path);
@@ -40,22 +42,23 @@ void ByteCodeRunner::run(const std::string& source) {
     return;
   }
 
-  std::unique_ptr<Chunk> chunk =
+  std::unique_ptr<Function> function =
       Compiler(tokens, disassembler, e_reporter).compile();
   if (e_reporter.has_error()) {
     output << e_reporter.to_string();
     output.flush();
     return;
   }
-  assert(chunk);
-  InterpretResult result =
-      VM(output, disassembler, e_reporter, log_output).interpret(*chunk.get());
+  assert(function);
+  InterpretResult result = VM(output, disassembler, e_reporter, log_output)
+                               .interpret(std::move(function));
   if (e_reporter.has_error()) {
     output << e_reporter.to_string();
+    output.flush();
     return;
   }
   if (result != InterpretResult::INTERPRET_COMPILE_ERROR) {
-  };  // Just to make compiler happy;
+  };  // Just to make compiler happy as all errors are printed above.
   return;
 }
 }  // namespace clox

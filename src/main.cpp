@@ -82,8 +82,8 @@ void launch_bytecode(int argc, char* argv[]) {
   } else if (argc == 3) {
     // Debugger runs with 3 args
     clox::ByteCodeRunner().runFile(
-        "/Users/psarnick/dev/cpplox/test/for/syntax.lox");
-    clox::ByteCodeRunner().runRepl();
+        "/Users/psarnick/dev/cpplox/test/function/add.lox");
+    //"/Users/psarnick/dev/cpplox/build/func_sample.lox");
   } else {
     throw std::logic_error("Unsupported arguments " + std::to_string(argc));
   }

@@ -42,6 +42,8 @@ size_t Disassembler::disassemble_instruction(const Chunk& chunk,
       return simple_instruction("OP_FALSE", offset);
     case OpCode::OP_POP:
       return simple_instruction("OP_POP", offset);
+    case OpCode::OP_NOOP:
+      return byte_instruction("OP_NOOP", chunk, offset);
     case OpCode::OP_GET_LOCAL:
       return byte_instruction("OP_GET_LOCAL", chunk, offset);
     case OpCode::OP_SET_LOCAL:
@@ -78,6 +80,8 @@ size_t Disassembler::disassemble_instruction(const Chunk& chunk,
       return jump_instruction("OP_JUMP_IF_FALSE", 1, chunk, offset);
     case OpCode::OP_LOOP:
       return jump_instruction("OP_LOOP", -1, chunk, offset);
+    case OpCode::OP_CALL:
+      return byte_instruction("OP_CALL", chunk, offset);
     default:
       debug_out << "Unknown opcode: " << static_cast<unsigned int>(instruction)
                 << std::endl;
@@ -118,11 +122,13 @@ size_t Disassembler::byte_instruction(const std::string name,
   return offset + 2;
 }
 
-size_t Disassembler::jump_instruction(const std::string name, int sign, const Chunk& chunk, size_t offset) const {
+size_t Disassembler::jump_instruction(const std::string name, int sign,
+                                      const Chunk& chunk, size_t offset) const {
   uint16_t jump = static_cast<uint16_t>((chunk.code[offset + 1] << 8));
   jump |= chunk.code[offset + 2];
-  debug_out << std::setfill(' ') << std::left << name << std::setw(20 - name.length()) << std::right
-    << offset << " -> " << static_cast<int>(offset) + 3 + sign * jump << std::endl;
+  debug_out << std::setfill(' ') << std::left << name
+            << std::setw(20 - name.length()) << std::right << offset << " -> "
+            << static_cast<int>(offset) + 3 + sign * jump << std::endl;
   // TODO: Hacky for now and will break, make adjustments dynamic.
   return offset + 3;
 }

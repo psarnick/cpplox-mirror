@@ -109,20 +109,14 @@ INSTANTIATE_TEST_SUITE_P(
                       "comments/only_line_comment.lox", "comments/unicode.lox",
                       "comments/only_line_comment_and_line.lox"));
 
-/*
-INSTANTIATE_TEST_SUITE_P(
-    LimitTests,
-    TestVMFixture,
-    ::testing::Values(
-      "limit/too_many_constants.lox",
-      "limit/no_reuse_constants.lox",
-      "limit/too_many_upvalues.lox",
-      "limit/stack_overflow.lox",
-      "limit/too_many_locals.lox",
-      "limit/loop_too_large.lox"
-    )
-);
-*/
+INSTANTIATE_TEST_SUITE_P(LimitTests, TestVMFixture,
+                         ::testing::Values(
+                             //"limit/too_many_constants.lox",
+                             //"limit/no_reuse_constants.lox",
+                             //"limit/too_many_upvalues.lox",
+                             //"limit/stack_overflow.lox",
+                             "limit/too_many_locals.lox",
+                             "limit/loop_too_large.lox"));
 
 INSTANTIATE_TEST_SUITE_P(
     VariableTests, TestVMFixture,
@@ -147,22 +141,16 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(NilTests, TestVMFixture,
                          ::testing::Values("nil/literal.lox"));
 
-INSTANTIATE_TEST_SUITE_P(
-    IfTests,
-    TestVMFixture,
-    ::testing::Values(
-      "if/var_in_then.lox",
-      "if/dangling_else.lox",
-      "if/truth.lox",
-      //"if/fun_in_else.lox",
-      //"if/class_in_else.lox",
-      "if/else.lox",
-      //"if/fun_in_then.lox",
-      //"if/class_in_then.lox",
-      "if/var_in_else.lox",
-      "if/if.lox"
-    )
-);
+INSTANTIATE_TEST_SUITE_P(IfTests, TestVMFixture,
+                         ::testing::Values("if/var_in_then.lox",
+                                           "if/dangling_else.lox",
+                                           "if/truth.lox",
+                                           //"if/fun_in_else.lox",
+                                           //"if/class_in_else.lox",
+                                           "if/else.lox",
+                                           //"if/fun_in_then.lox",
+                                           //"if/class_in_then.lox",
+                                           "if/var_in_else.lox", "if/if.lox"));
 
 INSTANTIATE_TEST_SUITE_P(
     AssignmentTests, TestVMFixture,
@@ -187,29 +175,22 @@ INSTANTIATE_TEST_SUITE_P(
     )
 );
  */
-/*
 INSTANTIATE_TEST_SUITE_P(
-    FunctionTests,
-    TestVMFixture,
+    FunctionTests, TestVMFixture,
     ::testing::Values(
-      "function/local_mutual_recursion.lox",
-      "function/empty_body.lox",
-      "function/too_many_arguments.lox",
-      "function/add.lox",
-      "function/missing_comma_in_parameters.lox",
-      "function/nested_call_with_arguments.lox",
-      "function/body_must_be_block.lox",
-      "function/missing_arguments.lox",
-      "function/parameters.lox",
-      "function/local_recursion.lox",
-      "function/recursion.lox",
-      "function/print.lox",
-      "function/too_many_parameters.lox",
-      "function/mutual_recursion.lox",
-      "function/extra_arguments.lox"
-    )
-);
-*/
+        "function/local_mutual_recursion.lox", "function/empty_body.lox",
+        "function/too_many_arguments.lox", "function/add.lox",
+        "function/missing_comma_in_parameters.lox",
+        "function/nested_call_with_arguments.lox",
+        //"function/body_must_be_block.lox",
+        // This test works, just requires a change to how expect's in tests are
+        // parsed.
+        "function/missing_arguments.lox", "function/parameters.lox",
+        //"function/local_recursion.lox",
+        // Uncomment after closures.
+        "function/recursion.lox", "function/print.lox",
+        "function/too_many_parameters.lox", "function/mutual_recursion.lox",
+        "function/extra_arguments.lox"));
 
 /*
 INSTANTIATE_TEST_SUITE_P(
@@ -283,16 +264,11 @@ INSTANTIATE_TEST_SUITE_P(
 );
  */
 
-INSTANTIATE_TEST_SUITE_P(
-    Logical_operatorTests,
-    TestVMFixture,
-    ::testing::Values(
-      "logical_operator/and.lox",
-      "logical_operator/or.lox",
-      "logical_operator/and_truth.lox",
-      "logical_operator/or_truth.lox"
-    )
-);
+INSTANTIATE_TEST_SUITE_P(Logical_operatorTests, TestVMFixture,
+                         ::testing::Values("logical_operator/and.lox",
+                                           "logical_operator/or.lox",
+                                           "logical_operator/and_truth.lox",
+                                           "logical_operator/or_truth.lox"));
 
 /*
 INSTANTIATE_TEST_SUITE_P(
@@ -347,7 +323,8 @@ INSTANTIATE_TEST_SUITE_P(
       "adhoc/nested_block.lox",
       "adhoc/closure.lox",
       "adhoc/make-counter-closure.lox",
-      "adhoc/fun-call.lox"
+      "adhoc/fun-call.lox",
+      "adhoc/func_assignment",
     )
 );
  */
@@ -356,23 +333,18 @@ INSTANTIATE_TEST_SUITE_P(BoolTests, TestVMFixture,
                                            "bool/not.lox"));
 
 INSTANTIATE_TEST_SUITE_P(
-    ForTests,
-    TestVMFixture,
+    ForTests, TestVMFixture,
     ::testing::Values(
-      //"for/return_closure.lox",
-      "for/scope.lox",
-      "for/var_in_body.lox",
-      "for/syntax.lox",
-      // ^ TODO: for/syntax uncomment section after functions done
-      //"for/return_inside.lox",
-      "for/statement_initializer.lox",
-      "for/statement_increment.lox",
-      "for/statement_condition.lox"
-      //"for/closure_in_body.lox",
-      //"for/class_in_body.lox",
-      //"for/fun_in_body.lox"
-    )
-);
+        //"for/return_closure.lox",
+        "for/scope.lox", "for/var_in_body.lox", "for/syntax.lox",
+        // ^ TODO: for/syntax uncomment section after functions done
+        //"for/return_inside.lox",
+        "for/statement_initializer.lox", "for/statement_increment.lox",
+        "for/statement_condition.lox"
+        //"for/closure_in_body.lox",
+        //"for/class_in_body.lox",
+        //"for/fun_in_body.lox"
+        ));
 
 /*
 INSTANTIATE_TEST_SUITE_P(
@@ -414,20 +386,15 @@ INSTANTIATE_TEST_SUITE_P(RegressionTests, TestVMFixture,
                              // "regression/394.lox"
                              ));
 
-
-INSTANTIATE_TEST_SUITE_P(
-    WhileTests,
-    TestVMFixture,
-    ::testing::Values(
-      //"while/return_closure.lox",
-      "while/var_in_body.lox",
-      "while/syntax.lox"
-      //"while/return_inside.lox"
-      //"while/closure_in_body.lox",
-      //"while/class_in_body.lox",
-      //"while/fun_in_body.lox"
-    )
-);
+INSTANTIATE_TEST_SUITE_P(WhileTests, TestVMFixture,
+                         ::testing::Values(
+                             //"while/return_closure.lox",
+                             "while/var_in_body.lox", "while/syntax.lox"
+                             //"while/return_inside.lox"
+                             //"while/closure_in_body.lox",
+                             //"while/class_in_body.lox",
+                             //"while/fun_in_body.lox"
+                             ));
 
 /*
 INSTANTIATE_TEST_SUITE_P(
