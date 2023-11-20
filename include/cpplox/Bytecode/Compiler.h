@@ -4,12 +4,10 @@
 #include <string>
 #include <utility>
 
-#include "Chunk.h"
 #include "Debug.h"
 #include "cpplox/Treewalk/ErrorReporter.h"
 #include "cpplox/Treewalk/Token.h"
 
-using namespace chunk;
 using namespace clox::Types;
 using clox::ErrorsAndDebug::ErrorReporter;
 using namespace debug;
@@ -57,8 +55,8 @@ class Compiler {
 
   const std::vector<const ParseRule> rules = {
       /* LEFT_PAREN */ {.prefix = &Compiler::grouping,
-                        .infix = nullptr,
-                        .precedence = Precedence::NONE},
+                        .infix = &Compiler::call,
+                        .precedence = Precedence::CALL},
       /* RIGHT_PAREN */
       {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
       /* LEFT_BRACE */
@@ -130,7 +128,9 @@ class Compiler {
        .infix = nullptr,
        .precedence = Precedence::NONE},
       /* AND */
-      {.prefix = nullptr, .infix = &Compiler::and_, .precedence = Precedence::AND},
+      {.prefix = nullptr,
+       .infix = &Compiler::and_,
+       .precedence = Precedence::AND},
       /* CLASS */
       {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
       /* ELSE */
@@ -150,7 +150,9 @@ class Compiler {
        .infix = nullptr,
        .precedence = Precedence::NONE},
       /* OR */
-      {.prefix = nullptr, .infix = &Compiler::or_, .precedence = Precedence::OR},
+      {.prefix = nullptr,
+       .infix = &Compiler::or_,
+       .precedence = Precedence::OR},
       /* PRINT */
       {.prefix = nullptr, .infix = nullptr, .precedence = Precedence::NONE},
       /* RETURN */
@@ -188,25 +190,40 @@ class Compiler {
 
  public:
   explicit Compiler(const std::vector<const Token>& tokens,
-                    const Disassembler& disassembler, ErrorReporter& e_reporter)
+                    const Disassembler& disassembler, ErrorReporter& e_reporter,
+                    size_t token_idx = 0)
       : tokens{tokens},
         disassembler{disassembler},
         e_reporter{e_reporter},
-        chunk{std::make_unique<Chunk>()} {};
-  std::unique_ptr<Chunk> compile();
+        function{std::make_unique<Function>(0, "<script>")},
+        locals{},
+        healthy{true} {
+    if (token_idx > 0) {
+      current = token_idx;
+      previous = token_idx - 1;
+      function->name = tokens[previous].get_lexeme();
+    }
+    locals.push_back({.name = "", .depth = 0, .ready = false});
+    // locals is used to calculate stack window offsets for local variables.
+    // However, for each function call, VM reserves one stack slot for internal
+    // purposes. This unnnamed local entry is added to adjust calculated
+    // indices.
+  };
+  std::unique_ptr<Function> compile();
   // Compile can only be called once, very meh but simpler for now.
 
  private:
   const std::vector<const Token>& tokens;
   const Disassembler& disassembler;
   ErrorReporter& e_reporter;
-  std::unique_ptr<Chunk> chunk;
+  std::unique_ptr<Function> function;
+  std::vector<Local> locals;
   size_t current{0};
   size_t previous{0};
   bool had_error{false};
   bool panic_mode{false};
-  bool already_called{false};
-  std::vector<Local> locals;
+  bool healthy{true};
+
   // All locals that are in scope during each point of compilation, ordered by
   // order of declaration in code. Note: OP_GET_LOCAL and OP_SET_LOCAL use 1
   // byte operands, so locals.size() can be 256 at most.
@@ -215,10 +232,12 @@ class Compiler {
 
   void advance();
   void declaration();
+  void dispatch_function_declaration();
+  void function_declaration();
   void var_declaration();
   void statement();
-  void expression_stmt();
-  void print_stmt();
+  void expression_statement();
+  void print_statement();
   void block();
   void expression();
   void number(const bool precedence_context_allows_assignment);
@@ -230,6 +249,7 @@ class Compiler {
   void or_(const bool precedence_context_allows_assignment);
   // Compiled bytecode order is such that VM first executes LHS, then RHS and
   // finally the instruction.
+  void call(const bool precedence_context_allows_assignment);
   void literal(const bool precedence_context_allows_assignment);
   void variable(const bool precedence_context_allows_assignment);
   void parse_precedence(const Precedence& precedence);
@@ -243,6 +263,7 @@ class Compiler {
   void if_statement();
   void while_statement();
   void for_statement();
+  void return_statement();
   void named_variable(const std::string& var_name,
                       const bool precedence_context_allows_assignment);
   std::pair<uint8_t, bool> resolve_local(const std::string& name);

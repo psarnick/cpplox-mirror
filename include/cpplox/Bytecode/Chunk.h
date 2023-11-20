@@ -32,7 +32,9 @@ enum class OpCode : uint8_t {
   OP_PRINT,          // [opcode] and 1 value  taken from stack
   OP_JUMP_IF_FALSE,  // [opcode, offset's upper byte, offset's lower byte]
   OP_JUMP,           // [opcode, offset's upper byte, offset's lower byte]
-  OP_LOOP            // [opcode, offset's upper byte, offset's lower byte]
+  OP_LOOP,           // [opcode, offset's upper byte, offset's lower byte]
+  OP_CALL,           // [opcode, number of func call arguments]
+  OP_NOOP            // [opcode, operand]
 };
 
 class Chunk {

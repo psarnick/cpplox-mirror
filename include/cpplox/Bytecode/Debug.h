@@ -20,10 +20,11 @@ class Disassembler {
                               size_t offset) const;
   size_t byte_instruction(const std::string name, const Chunk& chunk,
                           size_t offset) const;
-  size_t jump_instruction(const std::string name, int sign,
-                           const Chunk& chunk, size_t offset) const;
+  size_t jump_instruction(const std::string name, int sign, const Chunk& chunk,
+                          size_t offset) const;
+
  private:
   std::ofstream& debug_out;
-  static const int max_line_len { 30 };
+  static const int max_line_len{30};
 };
 }  // namespace debug
