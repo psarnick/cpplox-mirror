@@ -1,13 +1,23 @@
 var a = "global";
+var a_num = 1;
+var a_tristate = false;
 
 {
   fun assign() {
     a = "assigned";
+    a_num = a_num + 1;
+    a_tristate = nil;
   }
 
   var a = "inner";
+  var a_num = 0;
+  var a_tristate = true;
   assign();
   print a; // expect: inner
+  print a_num; // expect: 0
+  print a_tristate; // expect: true
 }
 
 print a; // expect: assigned
+print a_num; // expect: 2
+print a_tristate; // expect: nil

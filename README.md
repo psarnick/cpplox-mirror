@@ -12,7 +12,7 @@ How to run one file:
 * `./src/cpplox ../test/for/syntax.lox` while in `build` directory
 * `cat ./compiler.log` to see bytecode and execution trace 
 
-Done: functions; Next: closures.
+Done: closures; in progress: GC (does not work yet & most of the tests fail - drop me a message if you want latest working revision).
 
 TODOs: 
 * Finish book

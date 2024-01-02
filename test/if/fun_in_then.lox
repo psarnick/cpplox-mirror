@@ -1,2 +1,1 @@
-// [line 2] Error at 'fun': Expect expression.
-if (true) fun foo() {}
+if (true) fun foo() {} // expect: [Parsing error] [line 1] error: bad syntax while parsing: Got TokenType::FUN with lexeme: 'fun'. Expected expression.

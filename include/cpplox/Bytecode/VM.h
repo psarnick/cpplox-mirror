@@ -4,32 +4,34 @@
 #include <fstream>
 #include <unordered_map>
 #include <vector>
+#include <list>
 
+#include "cpplox/Treewalk/ErrorReporter.h"
+// TODO: Move above to common/per-functionality to break dependency.
 #include "cpplox/Bytecode/Chunk.h"
 #include "cpplox/Bytecode/Compiler.h"
 #include "cpplox/Bytecode/Debug.h"
 #include "cpplox/Bytecode/Value.h"
-#include "cpplox/Treewalk/ErrorReporter.h"
+#include "cpplox/Bytecode/NativeFunctions.h"
+#include "cpplox/Bytecode/StringPool.h"
 
-namespace vm {
+
+namespace cpplox {
+
 using clox::ErrorsAndDebug::ErrorReporter;
-using namespace debug;
-using namespace chunk;
+
 
 enum class InterpretResult {
   INTERPRET_OK = 0,
-  INTERPRET_COMPILE_ERROR = 1,
-  INTERPRET_RUNTIME_ERROR = 2
+  INTERPRET_RUNTIME_ERROR = 1
 };
-// TODO: ByteCodeRunner does scanning and compilation, so
-// INTERPRET_COMPILE_ERROR is not applicable for now.
 
 class CallFrame {
   // Represents a single ongoing function call.
  public:
-  explicit CallFrame(const Function& function, size_t ip, size_t stack_offset)
-      : function{function}, ip{ip}, stack_offset{stack_offset} {};
-  const Function& function;
+  explicit CallFrame(const Closure& closure, size_t ip, size_t stack_offset)
+      : closure{closure}, ip{ip}, stack_offset{stack_offset} {};
+  const Closure& closure;
   size_t ip{0};
   size_t stack_offset{0};
   // Local variable slots calculated by compiler are relative to function's
@@ -42,23 +44,32 @@ class CallFrame {
 class VM {
  public:
   explicit VM(std::ostream& output, const Disassembler& disassembler,
-              ErrorReporter& e_reporter, std::ofstream& log_output)
+              ErrorReporter& e_reporter, gc_heap* const heap,
+              StringPool* const pool, std::ofstream& log_output)
       : output(output),
         disassembler{disassembler},
-        log_output{log_output},
-        e_reporter(e_reporter){};
+        e_reporter(e_reporter),
+        heap{heap},
+        pool{pool},
+        log_output{log_output} {
+          register_gc_callbacks();
+          globals.insert_or_assign(pool->insert_or_get("clock"), heap->make<NativeFn>(cpplox::clock));
+        };
 
-  InterpretResult interpret(std::unique_ptr<Function> func);
-  // interpret can only be called once, very meh but simpler for now.
-  // TODO: Consider moving Function& arg to constructor (similar to Compiler.h)
-  // to make contract explicit
-  static const int MAX_CALLSTACK_DEPTH = 1024;
+  InterpretResult interpret(function_ptr func);
+  // interpret() can only be called once, very meh but simpler for now.
+  // TODO: Consider param to constructor (similar to Compiler.h) to make
+  // contract explicit.
+  static const int MAX_CALLSTACK_DEPTH = 128;
+
  private:
   std::ostream& output;
   const Disassembler& disassembler;
-  std::ofstream& log_output;
   ErrorReporter& e_reporter;
-  std::unordered_map<std::string, Value> globals;
+  gc_heap* const heap;
+  StringPool* const pool;
+  std::ofstream& log_output;
+  std::unordered_map<const_string_ptr, Value> globals;
   // Global variables are resolved dynamically (code referring to a global
   // variable before it's defined is valid, as long as this code is executed
   // after the corresponding definition - handy for recursive functions and
@@ -73,9 +84,12 @@ class VM {
   // TODO: What would it mean to compile a global variable?
   std::vector<Value> stack;
   // TODO: Bound the stack & throw error if exceeded.
-  // Needless copies of Value are made on stack and globals, maybe better to
-  // pass Value by value (it's usually a small object) and just optimise
-  // handling std::string case (off-hand pool?)
+  std::list<upvalue_ptr> open_upvalues{};
+  // Captured values that are still in lexical scope (therefore on stack) and
+  // can be directly referenced in other closures. TODO: adding classes
+  // and fields can change the meaning of this list. Ordered by increasing
+  // stack index (head is closest to stack bottom, tail to stack top).
+
   CallFrame* curr_frame{nullptr};
   const Function* curr_fun{nullptr};
   std::vector<CallFrame> call_frames;
@@ -84,16 +98,16 @@ class VM {
   bool already_called{false};
 
   InterpretResult run();
+  void register_gc_callbacks() const;
+  const upvalue_ptr add_or_get_upvalue(size_t stack_index);
+  void close_upvalues(size_t last);
   void update_frame_pointers();
-  bool call(const Value& maybe_callable, uint8_t arg_count);
-  bool is_falsey(const Value& val) const;
-  bool values_equal(const Value& lhs, const Value& rhs) const;
+  bool call(uint8_t arg_count);
+  bool is_falsey(Value val) const;
   void set_runtime_error(std::string err_msg) const;
   void trace_execution() const;
   template <typename T>
-  bool type_match(const Value& lhs, const Value& rhs);
-  template <typename T>
-  T add(const Value& lhs, const Value& rhs);
+  bool type_match(Value lhs, Value rhs) const;
 };
 
-}  // namespace vm
+}  // namespace cpplox

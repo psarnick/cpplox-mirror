@@ -8,11 +8,13 @@ add_dependencies(check unit_test)
 
 target_sources(unit_test
   PRIVATE
-    ScannerTest.cpp
+    TestScanner.cpp
     TestAstPrinter.cpp
     TestInterpreter.cpp
     TestParser.cpp
-    TestVM.cpp  
+    TestVM.cpp
+    TestGC.cpp
+    TestStringPool.cpp
     main.cpp
 )
 

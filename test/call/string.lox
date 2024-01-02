@@ -1,1 +1,1 @@
-"str"(); // expect runtime error: Can only call functions and classes.
+"str"(); // expect: [Runtime error] [line 1] while interpreting: Did not receive a callable.

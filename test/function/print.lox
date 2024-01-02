@@ -1,4 +1,7 @@
 fun foo() {}
 print foo; // expect: <fn foo>
 
-print clock; // expect: <fn clock>
+print clock; // expect: <native fn>
+
+print concat("<sep>", 1, "two", clock); // expect: 1<sep>two<sep><native fn>
+print concat(" ", foo, false, "foobar", clock); // expect: <fn foo> false foobar <native fn>

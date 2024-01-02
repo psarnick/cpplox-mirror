@@ -1,27 +1,49 @@
 var f;
 var g;
 
+fun p(a, b, c) { print a; print b; print c; }
+
 {
   var local = "local";
+  var local_num = 1;
+  var local_tristate = false;
+
   fun f_() {
-    print local;
+    p(local, local_num, local_tristate);
+
     local = "after f";
-    print local;
+    local_num = local_num + 1;
+    local_tristate = !local_tristate;
+
+    p(local, local_num, local_tristate);
   }
   f = f_;
 
   fun g_() {
-    print local;
+    p(local, local_num, local_tristate);
+
     local = "after g";
-    print local;
+    local_num = local_num + 1;
+    local_tristate = nil;
+
+    p(local, local_num, local_tristate);
   }
   g = g_;
 }
 
 f();
 // expect: local
+// expect: 1
+// expect: false
 // expect: after f
+// expect: 2
+// expect: true
 
 g();
 // expect: after f
+// expect: 2
+// expect: true
+
 // expect: after g
+// expect: 3
+// expect: nil

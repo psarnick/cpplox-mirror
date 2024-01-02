@@ -1,1 +1,1 @@
-nil(); // expect runtime error: Can only call functions and classes.
+nil(); // expect: [Runtime error] [line 1] while interpreting: Did not receive a callable.

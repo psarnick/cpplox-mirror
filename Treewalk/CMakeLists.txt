@@ -1,0 +1,16 @@
+target_sources(cpplox
+  PUBLIC
+    Expr.cpp
+    ExprFactory.cpp
+    Interpreter.cpp
+    Literal.cpp
+    Resolver.cpp
+    Runner.cpp
+    Scanner.cpp
+    Stmt.cpp
+    StmtVisitor.cpp
+    Token.cpp
+    AstGenerator.cpp
+    ErrorReporter.cpp
+    Parser.cpp
+)

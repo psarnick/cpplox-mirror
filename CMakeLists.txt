@@ -8,7 +8,11 @@ project(cpplox
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_compile_options(-Wpedantic -Wall -Werror -O3)
+#add_compile_options(-Wpedantic -Wall -Werror -O3 -fsanitize=address -g -ferror-limit=3)
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+add_compile_options(-Wpedantic -Wall -Werror -O0 -ferror-limit=2)
+
+
 
 include(CTest)
 
@@ -25,5 +29,3 @@ add_executable(cpplox_binary src/main.cpp)
 
 # Link against library target
 target_link_libraries(cpplox_binary PRIVATE cpplox)
-
-
